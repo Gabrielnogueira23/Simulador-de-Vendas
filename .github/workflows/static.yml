@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simulador de Valores</title>
+
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --card: #11192a;
+      --input: #0c1322;
+      --border: #223252;
+      --primary: #3b6cff;
+      --whatsapp: #25D366;
+      --text: #e9eefc;
+      --muted: #b9c6e4;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    }
+
+    .wrap {
+      max-width: 760px;
+      margin: auto;
+      padding: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    header p {
+      margin: 6px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    label {
+      font-size: 12px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--input);
+      color: var(--text);
+      font-size: 15px;
+    }
+
+    .row { margin-bottom: 12px; }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .btns {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button {
+      padding: 14px;
+      border-radius: 14px;
+      border: none;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: var(--border);
+      color: white;
+    }
+
+    .btn-whatsapp {
+      background: var(--whatsapp);
+      color: white;
+    }
+
+    .results {
+      margin-top: 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .kpi {
+      background: var(--input);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .kpi span {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .kpi strong {
+      font-size: 18px;
+    }
+
+    footer {
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="card">
+
+      <header>
+        <h1> 💳 🔄 💵 AVANTE 💳 🔄 💵 </h1>
+        <p>Simulação rápida com repasse imediato</p>
+      </header>
+
+      <div class="grid">
+        <div class="row">
+          <label>Modo</label>
+          <select id="mode">
+            <option value="fromNet">Quero receber (líquido)</option>
+            <option value="fromGross">Vou passar no cartão</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label>Valor (R$)</label>
+          <input id="amount" placeholder="Ex: 1000,00" />
+        </div>
+
+        <div class="row">
+          <label>Parcelas</label>
+          <select id="installments"></select>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="btn-primary" onclick="calc()">Calcular</button>
+        <button class="btn-whatsapp" onclick="sendWhatsApp()">Enviar no WhatsApp</button>
+        <button class="btn-secondary" onclick="resetAll()">Limpar</button>
+      </div>
+
+      <div class="results">
+        <div class="kpi">
+          <span>Valor no cartão</span>
+          <strong id="grossOut">—</strong>
+        </div>
+        <div class="kpi">
+          <span>Cliente recebe</span>
+          <strong id="netOut">—</strong>
+        </div>
+        <div class="kpi">
+          <span>Taxa aplicada</span>
+          <strong id="feePctOut">—</strong>
+        </div>
+        <div class="kpi">
+          <span>Custo da taxa</span>
+          <strong id="feeOut">—</strong>
+        </div>
+      </div>
+
+      <footer>
+        Valores estimados. Sujeitos a confirmação.
+      </footer>
+
+    </div>
+  </div>
+
+<script>
+  const WHATSAPP_NUMBER = "5571991738542";
+
+  const rates = [
+    6.99, 9.39, 11.12, 11.78, 13.5, 14.15,
+    14.8, 15.41, 15.41, 15.5, 16, 16,
+    21, 22.5, 23.5, 24, 24.92, 25.92
+  ];
+
+  const instSel = document.getElementById("installments");
+  for (let i = 1; i <= 18; i++) {
+    instSel.innerHTML += `<option value="${i}">${i}x</option>`;
+  }
+
+  function parseVal(v) {
+    return Number(v.replace(/\./g, '').replace(',', '.'));
+  }
+
+  function money(v) {
+    return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  function calc() {
+    const mode = modeSel.value;
+    const val = parseVal(amount.value);
+    const inst = Number(instSel.value);
+    const rate = rates[inst - 1] / 100;
+
+    let gross, net;
+
+    if (mode === "fromNet") {
+      net = val;
+      gross = net / (1 - rate);
+    } else {
+      gross = val;
+      net = gross * (1 - rate);
+    }
+
+    const fee = gross - net;
+
+    grossOut.textContent = money(gross);
+    netOut.textContent = money(net);
+    feePctOut.textContent = rates[inst - 1].toFixed(2) + "%";
+    feeOut.textContent = money(fee);
+  }
+
+  function sendWhatsApp() {
+    calc();
+    const inst = instSel.value;
+    const rate = rates[inst - 1];
+
+    const msg =
+`Olá! Gostaria de confirmar esta simulação:
+
+• Parcelas: ${inst}x
+• Taxa: ${rate}%
+• Valor no cartão: ${grossOut.textContent}
+• Cliente recebe: ${netOut.textContent}
+
+Pode confirmar pra mim?`;
+
+    window.open(
+      `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`,
+      "_blank"
+    );
+  }
+
+  function resetAll() {
+    amount.value = "";
+    grossOut.textContent = "—";
+    netOut.textContent = "—";
+    feePctOut.textContent = "—";
+    feeOut.textContent = "—";
+  }
+
+  const modeSel = document.getElementById("mode");
+  const amount = document.getElementById("amount");
+</script>
+</body>
+</html>
