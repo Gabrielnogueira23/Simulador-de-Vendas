@@ -232,13 +232,13 @@
 
     let gross, net;
 
-    if (mode === "fromNet") {
-      net = val;
-      gross = net / (1 - rate);
-    } else {
-      gross = val;
-      net = gross * (1 - rate);
-    }
+if (mode === "fromNet") {
+  net = val;
+  gross = net * (1 + rate);
+} else {
+  gross = val;
+  net = gross * (1 - rate);
+}
 
     const fee = gross - net;
 
