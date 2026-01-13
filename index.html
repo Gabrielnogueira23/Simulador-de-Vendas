@@ -244,20 +244,23 @@ if (mode === "fromNet") {
 
     grossOut.textContent = money(gross);
     netOut.textContent = money(net);
-    feePctOut.textContent = rates[inst - 1].toFixed(2) + "%";
+    const monthlyRate = (rates[inst - 1] / inst);
+feePctOut.textContent = monthlyRate.toFixed(2) + "% a.m.";
     feeOut.textContent = money(fee);
   }
 
   function sendWhatsApp() {
     calc();
     const inst = instSel.value;
-    const rate = rates[inst - 1];
+    const rateTotal = rates[inst - 1];
+const rateMonthly = rateTotal / inst;
+
 
     const msg =
 `Olá! Gostaria de confirmar esta simulação:
 
 • Parcelas: ${inst}x
-• Taxa: ${rate}%
+• Taxa: ${rateMonthly.toFixed(2)}% a.m.
 • Valor no cartão: ${grossOut.textContent}
 • Cliente recebe: ${netOut.textContent}
 
